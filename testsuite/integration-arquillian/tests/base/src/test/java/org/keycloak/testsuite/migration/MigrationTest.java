@@ -70,4 +70,16 @@ public class MigrationTest extends AbstractMigrationTest {
 
         testMigrationTo20_x();
     }
+
+    @Test
+    @Migration(versionPrefix = "19.")
+    public void migration19_xTest() throws Exception{
+        testMigratedData(false);
+
+        // Always test offline-token login during migration test
+        testOfflineTokenLogin();
+        testExtremelyLongClientAttribute(migrationRealm);
+
+        testMigrationTo20_x();
+    }
 }
