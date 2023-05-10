@@ -2143,7 +2143,6 @@
         <profile>
             <id>build-wildfly-adapters</id>
             <modules>
-                <module>distribution/licenses-common</module>
                 <module>distribution/maven-plugins/licenses-processor</module>
                 <module>distribution/feature-packs/adapter-feature-pack</module>
                 <module>distribution/adapters/wildfly-adapter</module>
