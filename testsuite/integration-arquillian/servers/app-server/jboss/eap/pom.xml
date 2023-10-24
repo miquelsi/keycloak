@@ -35,12 +35,16 @@
         <app.server.jboss.groupId>org.jboss.eap</app.server.jboss.groupId>
         <app.server.jboss.artifactId>wildfly-ee-dist</app.server.jboss.artifactId>
         <app.server.jboss.version>${eap.version}</app.server.jboss.version>
-        <app.server.jboss.unpacked.folder.name>jboss-eap-7.4</app.server.jboss.unpacked.folder.name>
+        <app.server.jboss.unpacked.folder.name>jboss-eap-8.0</app.server.jboss.unpacked.folder.name>
         
         <app.server.oidc.adapter.artifactId>keycloak-wildfly-adapter-dist</app.server.oidc.adapter.artifactId>
         <app.server.saml.adapter.artifactId>keycloak-saml-wildfly-adapter-dist</app.server.saml.adapter.artifactId>
 
-        <skip.elytron.adapter.installation>false</skip.elytron.adapter.installation>
+        <skip.elytron.adapter.installation>true</skip.elytron.adapter.installation>
+        <skip.java17.enablement>true</skip.java17.enablement>
+        <skip.java17.enablement>true</skip.java17.enablement>
+        <skip.apply.offline.cli>true</skip.apply.offline.cli>
+        <skip.configure.clustered.scenario>true</skip.configure.clustered.scenario>
     </properties>
 
     <dependencies>
@@ -59,25 +63,4 @@
             <version>${project.version}</version>
         </dependency>
     </dependencies>
-
-    <profiles>
-        <profile>
-            <id>app-server-eap71</id>
-            <properties>
-                <app.server.jboss>eap71</app.server.jboss>
-                <app.server.jboss.version>${eap71.version}</app.server.jboss.version>
-                <app.server.jboss.unpacked.folder.name>jboss-eap-7.1</app.server.jboss.unpacked.folder.name>
-            </properties>
-        </profile>
-        <profile>
-            <id>app-server-eap-java17</id>
-            <activation>
-                <jdk>[17,)</jdk>
-            </activation>
-            <properties>
-                <skip.java17.enablement>false</skip.java17.enablement>
-            </properties>
-        </profile>
-    </profiles>
-
 </project>
