@@ -23,15 +23,6 @@
 
     <module-name>%CONTEXT_PATH%</module-name>
 
-    <servlet>
-        <servlet-name>javax.ws.rs.core.Application</servlet-name>
-        <load-on-startup>1</load-on-startup>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>javax.ws.rs.core.Application</servlet-name>
-        <url-pattern>/*</url-pattern>
-    </servlet-mapping>
-
     <filter>
         <filter-name>AdapterActionsFilter</filter-name>
         <filter-class>org.keycloak.testsuite.adapter.filter.AdapterActionsFilter</filter-class>
