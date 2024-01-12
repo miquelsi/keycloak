@@ -208,7 +208,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         dist: [temurin]
-        version: [19]
+        version: [19,21]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
