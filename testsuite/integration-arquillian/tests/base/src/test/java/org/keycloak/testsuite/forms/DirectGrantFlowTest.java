@@ -51,8 +51,8 @@ public class DirectGrantFlowTest extends AbstractTestRealmKeycloakTest {
     @ArquillianResource
     protected OAuthClient oauth;
 
-    @Drone
-    protected WebDriver driver;
+    //@Drone
+    //protected WebDriver driver;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);

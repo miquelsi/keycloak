@@ -36,7 +36,7 @@ public abstract class AbstractPage {
     @ArquillianResource
     protected SuiteContext suiteContext;
 
-    @ArquillianResource
+    //@ArquillianResource
     protected WebDriver driver;
 
     @ArquillianResource

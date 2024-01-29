@@ -27,6 +27,7 @@ import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
@@ -68,8 +69,8 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
     @ArquillianResource
     protected OAuthClient oauth;
 
-    @Drone
-    protected WebDriver driver;
+    //@Drone
+    //protected WebDriver driver;
 
     @Page
     protected LoginPage loginPage;
@@ -91,6 +92,17 @@ public class ReAuthenticationTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected AppPage appPage;
+
+    @Before
+    public void beforeReAuthenticationTest() {
+        loginPage.setDriver(driver);
+        loginUsernameOnlyPage.setDriver(driver);
+        passwordPage.setDriver(driver);
+        errorPage.setDriver(driver);
+        loginTotpPage.setDriver(driver);
+        appPage.setDriver(driver);
+        oauth.setDriver(driver);
+    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

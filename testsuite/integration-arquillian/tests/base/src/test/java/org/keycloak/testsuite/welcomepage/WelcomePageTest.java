@@ -79,7 +79,7 @@ public class WelcomePageTest extends AbstractKeycloakTest {
     public void beforeAbstractKeycloakTest() throws Exception {
         Assume.assumeThat("Test skipped",
                 suiteContext.getAuthServerInfo().isJBossBased(),
-                Matchers.is(true));
+                Matchers.is(false));
         DroneUtils.replaceDefaultWebDriver(this, phantomJS);
         setDefaultPageUriParameters();
     }

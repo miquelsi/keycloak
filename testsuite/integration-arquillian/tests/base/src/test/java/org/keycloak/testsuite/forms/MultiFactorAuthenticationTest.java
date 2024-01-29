@@ -25,6 +25,7 @@ import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.authentication.AuthenticationFlow;
@@ -62,8 +63,8 @@ public class MultiFactorAuthenticationTest extends AbstractTestRealmKeycloakTest
     @ArquillianResource
     protected OAuthClient oauth;
 
-    @Drone
-    protected WebDriver driver;
+    //@Drone
+    //protected WebDriver driver;
 
     @Page
     protected LoginPage loginPage;
@@ -88,6 +89,17 @@ public class MultiFactorAuthenticationTest extends AbstractTestRealmKeycloakTest
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+    }
+
+    @Before
+    public void beforeMultiFactorAuthenticationTest() {
+        loginPage.setDriver(driver);
+        loginUsernameOnlyPage.setDriver(driver);
+        passwordPage.setDriver(driver);
+        errorPage.setDriver(driver);
+        loginTotpPage.setDriver(driver);
+        selectAuthenticatorPage.setDriver(driver);
+        oauth.setDriver(driver);
     }
 
     private RealmRepresentation loadTestRealm() {

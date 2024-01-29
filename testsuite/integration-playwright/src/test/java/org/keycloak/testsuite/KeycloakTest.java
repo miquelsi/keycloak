@@ -1,202 +1,129 @@
-/*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.keycloak.testsuite;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.microsoft.playwright.*;
 import io.appium.java_client.AppiumDriver;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.jboss.arquillian.container.test.api.RunAsClient;
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.logging.Logger;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.runners.model.TestTimedOutException;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.AuthenticationManagementResource;
-import org.keycloak.admin.client.resource.RealmsResource;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.admin.client.resource.*;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPAttributeRequired;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.arquillian.KcArquillian;
-import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.TestContext;
-import org.keycloak.testsuite.auth.page.AuthRealm;
-import org.keycloak.testsuite.auth.page.AuthServer;
-import org.keycloak.testsuite.auth.page.AuthServerContextRoot;
-import org.keycloak.testsuite.auth.page.WelcomePage;
-import org.keycloak.testsuite.auth.page.login.OIDCLogin;
-import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
-import org.keycloak.testsuite.util.CryptoInitRule;
+import org.keycloak.testsuite.server.EmbeddedKeycloakLifecycle;
+import org.keycloak.testsuite.server.KeycloakLifecycle;
 import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TestCleanup;
-import org.keycloak.testsuite.util.TestEventsLogger;
-import org.openqa.selenium.PageLoadStrategy;
-import org.openqa.selenium.WebDriver;
+import org.keycloak.util.JsonSerialization;
 
-import jakarta.ws.rs.NotFoundException;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
-import org.keycloak.models.UserModel;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
+import static org.keycloak.testsuite.util.ServerURLs.*;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
-import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
 import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
-/**
- *
- * @author tkyjovsk
- */
-@RunWith(KcArquillian.class)
-@RunAsClient
-public abstract class AbstractKeycloakTest {
-    protected static final String ENGLISH_LOCALE_NAME = "English";
+public abstract class KeycloakTest {
 
     protected Logger log = Logger.getLogger(this.getClass());
+    protected static Playwright playwright;
+    protected static Browser browser;
 
-    @ClassRule
-    public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
+    protected BrowserContext context;
+    protected Page page;
 
-    @ArquillianResource
-    protected SuiteContext suiteContext;
+    protected static KeycloakLifecycle keycloak;
 
-    @ArquillianResource
-    protected TestContext testContext;
+    protected static Keycloak adminClient;
 
-    protected Keycloak adminClient;
-
-    protected KeycloakTestingClient testingClient;
-
-    @ArquillianResource
-    protected OAuthClient oauth;
+    //protected TestContext testContext;
 
     protected List<RealmRepresentation> testRealmReps;
 
-    @Drone
-    protected static WebDriver driver;
-
-    @Page
-    protected AuthServerContextRoot authServerContextRootPage;
-    @Page
-    protected AuthServer authServerPage;
-
-    @Page
-    protected AuthRealm masterRealmPage;
-
-    @Page
-    protected OIDCLogin loginPage;
-
-    @Page
-    protected UpdatePassword updatePasswordPage;
-
-    @Page
-    protected LoginPasswordUpdatePage passwordUpdatePage;
-
-    @Page
-    protected WelcomePage welcomePage;
-
-    private PropertiesConfiguration constantsProperties;
-
     private boolean resetTimeOffset;
 
-    /*@BeforeClass
-    public static void initDriver() {
-        ChromeOptions options = new ChromeOptions();
-        // Waits for webpage setup
-        options.setPageLoadStrategy(PageLoadStrategy.NORMAL);
-        // Chromium headless browser
-        options.addArguments("--headless=new");
-        // Turn on BiDi protocol
-        //options.setCapability("webSocketUrl", true);
-        options.addArguments("--ignore-certificate-errors");
+    //protected KeycloakTestingClient testingClient;
 
-        driver = new ChromeDriver(options);
-    }*/
+    @BeforeAll
+    static void launchBrowser() throws Throwable {
+        playwright = Playwright.create();
+        BrowserType.LaunchOptions launchOptions = new BrowserType.LaunchOptions().setHeadless(true);
+        browser = playwright.chromium().launch(launchOptions);
 
-    @Before
-    public void beforeAbstractKeycloakTest() throws Exception {
-        adminClient = testContext.getAdminClient();
-        if (adminClient == null || adminClient.isClosed()) {
-            reconnectAdminClient();
+        keycloak = EmbeddedKeycloakLifecycle.getInstance();
+        if (!keycloak.isRunning()) {
+            keycloak.start();
         }
 
-        getTestingClient();
+        adminClient = Keycloak.getInstance(keycloak.getBaseUrl(), "master", "admin", "admin", "admin-cli");
+    }
 
-        setDefaultPageUriParameters();
+    @AfterAll
+    static void closeBrowser() {
+        playwright.close();
+        adminClient.close();
+    }
 
-        TestEventsLogger.setDriver(driver);
+    @BeforeEach
+    void createContextAndPage() throws Exception {
+        context = browser.newContext();
+        page = context.newPage();
+
+        //adminClient = testContext.getAdminClient();
+        if (adminClient == null || adminClient.isClosed()) {
+            adminClient = Keycloak.getInstance(keycloak.getBaseUrl(), "master", "admin", "admin", "admin-cli");
+        }
+
+        //getTestingClient();
+
+        //setDefaultPageUriParameters();
+
+        //TestEventsLogger.setDriver(driver);
 
         // The backend cluster nodes may not be yet started. Password will be updated later for cluster setup.
-        if (!AuthServerTestEnricher.AUTH_SERVER_CLUSTER) {
+        /*if (!AuthServerTestEnricher.AUTH_SERVER_CLUSTER) {
             updateMasterAdminPassword();
-        }
+        }*/
 
         beforeAbstractKeycloakTestRealmImport();
 
-        if (testContext.getTestRealmReps().isEmpty()) {
+        importTestRealms();
+
+        /*if (testContext.getTestRealmReps().isEmpty()) {
             importTestRealms();
 
             if (!isImportAfterEachMethod()) {
@@ -204,15 +131,59 @@ public abstract class AbstractKeycloakTest {
             }
 
             afterAbstractKeycloakTestRealmImport();
+        }*/
+
+        //oauth.init(driver);
+    }
+
+    @AfterEach
+    void closeContext() throws IOException {
+        context.close();
+        //adminClient.realms().realm("test").remove();
+    }
+
+
+    private boolean importTestRealm(String realmJsonPath) throws IOException {
+
+        ObjectMapper mapper = new ObjectMapper();
+        try (InputStream fis = getClass().getResourceAsStream(realmJsonPath)) {
+            RealmRepresentation realmRepresentation = mapper.readValue(fis, RealmRepresentation.class);
+            adminClient.realms().create(realmRepresentation);
+            return true;
         }
 
-        oauth.init(driver);
     }
 
-    public void reconnectAdminClient() throws Exception {
+    public static UPConfig setUserProfileConfiguration(RealmResource testRealm, String configuration) {
+        try {
+            UPConfig config = configuration == null ? null : JsonSerialization.readValue(configuration, UPConfig.class);
+
+            if (config != null) {
+                UPAttribute username = config.getAttribute(UserModel.USERNAME);
+
+                if (username == null) {
+                    config.addOrReplaceAttribute(new UPAttribute(UserModel.USERNAME));
+                }
+
+                UPAttribute email = config.getAttribute(UserModel.EMAIL);
+
+                if (email == null) {
+                    config.addOrReplaceAttribute(new UPAttribute(UserModel.EMAIL, new UPAttributePermissions(new HashSet<>(Arrays.asList(ROLE_USER, ROLE_ADMIN)), new HashSet<>(Arrays.asList(ROLE_USER, ROLE_ADMIN))), new UPAttributeRequired(new HashSet<>(Collections.singletonList(ROLE_USER)), new HashSet<>())));
+                }
+            }
+
+            testRealm.users().userProfile().update(config);
+
+            return config;
+        } catch (IOException ioe) {
+            throw new RuntimeException("Failed to read configuration", ioe);
+        }
+    }
+
+    /*public void reconnectAdminClient() throws Exception {
         testContext.reconnectAdminClient();
         adminClient = testContext.getAdminClient();
-    }
+    }*/
 
     /**
      * Executed before test realms import
@@ -238,11 +209,11 @@ public abstract class AbstractKeycloakTest {
     protected void postAfterAbstractKeycloak() throws Exception {
     }
 
-    @After
+    @AfterEach
     public void afterAbstractKeycloakTest() throws Exception {
-        if (resetTimeOffset) {
+        /*if (resetTimeOffset) {
             resetTimeOffset();
-        }
+        }*/
 
         if (isImportAfterEachMethod()) {
             log.info("removing test realms after test method");
@@ -250,7 +221,7 @@ public abstract class AbstractKeycloakTest {
                 removeRealm(testRealm.getRealm());
             }
         } else {
-            log.info("calling all TestCleanup");
+            /*log.info("calling all TestCleanup");
             // Remove all sessions
             testContext.getTestRealmReps().stream().forEach((r)->testingClient.testing().removeUserSessions(r.getRealm()));
 
@@ -263,7 +234,7 @@ public abstract class AbstractKeycloakTest {
                     throw new RuntimeException(e);
                 }
             }
-            testContext.getCleanups().clear();
+            testContext.getCleanups().clear();*/
         }
 
         postAfterAbstractKeycloak();
@@ -272,19 +243,19 @@ public abstract class AbstractKeycloakTest {
         DroneUtils.resetQueue();
     }
 
-    protected TestCleanup getCleanup(String realmName) {
+    /*protected TestCleanup getCleanup(String realmName) {
         return testContext.getOrCreateCleanup(realmName);
     }
 
     protected TestCleanup getCleanup() {
         return getCleanup("test");
-    }
+    }*/
 
     protected boolean isImportAfterEachMethod() {
         return false;
     }
 
-    protected void updateMasterAdminPassword() {
+    /*protected void updateMasterAdminPassword() {
         if (!suiteContext.isAdminPasswordUpdated()) {
             log.debug("updating admin password");
 
@@ -305,7 +276,7 @@ public abstract class AbstractKeycloakTest {
         navigateToUri(oauth.SERVER_ROOT + "/auth/realms/" + realmName + "/testing/blank");
         log.info("deleting cookies in '" + realmName + "' realm");
         driver.manage().deleteAllCookies();
-    }
+    }*/
 
     // this is useful mainly for smartphones as cookies deletion doesn't work there
     protected void deleteAllSessionsInRealm(String realmName) {
@@ -319,7 +290,7 @@ public abstract class AbstractKeycloakTest {
         }
     }
 
-    protected void resetRealmSession(String realmName) {
+    /*protected void resetRealmSession(String realmName) {
         deleteAllCookiesForRealm(realmName);
 
         if (driver instanceof AppiumDriver) { // smartphone drivers don't support cookies deletion
@@ -359,7 +330,7 @@ public abstract class AbstractKeycloakTest {
 
     public TestContext getTestContext() {
         return testContext;
-    }
+    }*/
 
     public Keycloak getAdminClient() {
         return adminClient;
@@ -440,9 +411,9 @@ public abstract class AbstractKeycloakTest {
             return "";
         }
         return input
-              .replace("http", "https")
-              .replace("8080", "8543")
-              .replace("8180", "8543");
+                .replace("http", "https")
+                .replace("8080", "8543")
+                .replace("8180", "8543");
     }
 
     protected interface ExecutableTestMethod {
@@ -542,7 +513,7 @@ public abstract class AbstractKeycloakTest {
                 vpModel.setDefaultAction(false);
                 adminClient.realm(realm.getRealm()).flows().updateRequiredAction(
                         UserModel.RequiredAction.VERIFY_PROFILE.name(), vpModel);
-                testingClient.testing().pollAdminEvent(); // remove the event
+                //testingClient.testing().pollAdminEvent(); // remove the event
             } catch (NotFoundException ignore) {
             }
         }
@@ -626,8 +597,8 @@ public abstract class AbstractKeycloakTest {
         client.setEnabled(true);
         client.setDirectAccessGrantsEnabled(true);
 
-        client.setRedirectUris(Collections.singletonList(oauth.SERVER_ROOT + "/auth/*"));
-        client.setBaseUrl(oauth.SERVER_ROOT + "/auth/realms/" + realm + "/app");
+        client.setRedirectUris(Collections.singletonList(keycloak.getBaseUrl() + "/auth/*"));
+        client.setBaseUrl(keycloak.getBaseUrl() + "/auth/realms/" + realm + "/app");
 
         OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setPostLogoutRedirectUris(Collections.singletonList("+"));
 
@@ -687,16 +658,16 @@ public abstract class AbstractKeycloakTest {
         now.set(Calendar.SECOND, second);
         int offset = (int) ((now.getTime().getTime() - System.currentTimeMillis()) / 1000);
 
-        setTimeOffset(offset + addSeconds);
+        //setTimeOffset(offset + addSeconds);
     }
 
     /**
      * Sets time offset in seconds that will be added to Time.currentTime() and Time.currentTimeMillis() both for client and server.
      * Moves time on the remote Infinispan server as well if the HotRod storage is used.
      *
-     * @param offset
+     * @param
      */
-    public void setTimeOffset(int offset) {
+    /*public void setTimeOffset(int offset) {
         String response = invokeTimeOffset(offset);
         resetTimeOffset = offset != 0;
         log.debugv("Set time offset, response {0}", response);
@@ -732,9 +703,9 @@ public abstract class AbstractKeycloakTest {
         }
 
         return String.valueOf(result);
-    }
+    }*/
 
-    private void loadConstantsProperties() throws ConfigurationException {
+    /*private void loadConstantsProperties() throws ConfigurationException {
         constantsProperties = new PropertiesConfiguration(System.getProperty("testsuite.constants"));
         constantsProperties.setThrowExceptionOnMissing(true);
     }
@@ -752,7 +723,7 @@ public abstract class AbstractKeycloakTest {
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
-    }
+    }*/
 
     public Logger getLogger() {
         return log;
@@ -782,5 +753,4 @@ public abstract class AbstractKeycloakTest {
             throw new AssertionError("unexpected response code " + response.getStatus() + ", body is:\n" + response.readEntity(String.class), ex);
         }
     }
-
 }
