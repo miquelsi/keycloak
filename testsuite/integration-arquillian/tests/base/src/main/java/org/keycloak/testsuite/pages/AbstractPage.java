@@ -39,7 +39,7 @@ public abstract class AbstractPage {
     @ArquillianResource
     protected WebDriver driver;
 
-    @ArquillianResource
+    //@ArquillianResource
     protected OAuthClient oauth;
 
     public void assertCurrent() {

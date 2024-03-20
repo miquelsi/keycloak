@@ -99,10 +99,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     @Rule
     public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
 
-    @Page
     protected AppPage appPage;
 
-    @Page
     protected LoginPage loginPage;
 
     @Page
@@ -117,7 +115,6 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     @Page
     protected ProceedPage proceedPage;
 
-    @Page
     protected ErrorPage errorPage;
 
     private String testUserId;
@@ -134,6 +131,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
     @Before
     public void before() {
+        appPage = new AppPage(driver);
+        loginPage = new LoginPage(driver);
+        errorPage = new ErrorPage(driver);
         ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("test-user@localhost")

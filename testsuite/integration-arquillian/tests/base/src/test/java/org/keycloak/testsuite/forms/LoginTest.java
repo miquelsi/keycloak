@@ -24,8 +24,8 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -130,19 +130,14 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
-    @Page
     protected AppPage appPage;
 
-    @Page
     protected LoginPage loginPage;
 
-    @Page
     protected ErrorPage errorPage;
 
-    @Page
     protected LoginPasswordUpdatePage updatePasswordPage;
 
-    @Page
     protected LoginConfigTotpPage configTotpPage;
 
     @Rule
@@ -157,6 +152,15 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         super.importTestRealms();
         userId = testRealm().users().search("login-test", Boolean.TRUE).get(0).getId();
         user2Id = testRealm().users().search("login-test2", Boolean.TRUE).get(0).getId();
+    }
+
+    @Before
+    public void before() {
+        loginPage = new LoginPage(driver);
+        appPage = new AppPage(driver);
+        errorPage = new ErrorPage(driver);
+        updatePasswordPage = new LoginPasswordUpdatePage(driver);
+        configTotpPage = new LoginConfigTotpPage(driver);
     }
 
     @Test
