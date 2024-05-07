@@ -12,4 +12,6 @@ public @interface KeycloakTestRealm {
 
     String name() default "";
 
+    Class<DefaultRealmConfiguration> configuration() default DefaultRealmConfiguration.class;
+
 }

@@ -10,6 +10,10 @@ public interface InjectionProvider {
 
     Object getValue(ExtensionContext context, Annotation annotation);
 
+    default void beforeAll() {}
+
+    default void beforeEach() {}
+
     default void afterEach() {}
 
     default void afterAll() {};

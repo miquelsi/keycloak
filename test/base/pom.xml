@@ -40,4 +40,29 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <environmentVariables>
+                        <!-- Will propagate to embedded Keycloak server and bootstrap user admin/admin (See QuarkusKeycloakApplication class) -->
+                        <KEYCLOAK_ADMIN>admin</KEYCLOAK_ADMIN>
+                        <KEYCLOAK_ADMIN_PASSWORD>admin</KEYCLOAK_ADMIN_PASSWORD>
+                    </environmentVariables>
+                    <properties>
+                        <configurationParameters>
+                            junit.jupiter.execution.parallel.enabled=true
+                            junit.jupiter.execution.parallel.mode.default=concurrent
+                        </configurationParameters>
+                    </properties>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

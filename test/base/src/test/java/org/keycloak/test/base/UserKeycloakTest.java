@@ -3,22 +3,20 @@ package org.keycloak.test.base;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.test.framework.KeycloakAdminClient;
-import org.keycloak.test.framework.KeycloakServerUrl;
-import org.keycloak.test.framework.KeycloakTest;
-import org.keycloak.test.framework.KeycloakTestRealm;
+import org.keycloak.test.framework.*;
 
-@KeycloakTest
+@ExtendWith(KeycloakSharedExtension.class)
 public class UserKeycloakTest {
 
     @KeycloakAdminClient
     Keycloak adminClient;
 
     // The realm is automatically created, and deleted
-    @KeycloakTestRealm
+    @KeycloakTestRealm(configuration = MyRealmConfig.class)
     RealmResource realm;
 
 // Not implemented, but we could perhaps let a test decide if they want to create a dedicated realm for the test, or
@@ -53,6 +51,13 @@ public class UserKeycloakTest {
         user.setUsername("my-user");
         Response response = realm.users().create(user);
         Assertions.assertEquals(201, response.getStatus());
+    }
+
+    private static class MyRealmConfig extends DefaultRealmConfiguration {
+
+        public String name() {
+            return "myCustomRealmName";
+        }
     }
 
 }

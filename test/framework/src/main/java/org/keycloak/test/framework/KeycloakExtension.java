@@ -21,6 +21,7 @@ public class KeycloakExtension extends AbstractKeycloakExtension implements Befo
 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
+        System.out.println("============== KeycloakExtension.beforeAll ==============");
         keycloak = Keycloak.builder()
                 .setVersion(Version.VERSION)
                 .addDependency("org.keycloak.extension", "kc-ext-poc", "1.0-SNAPSHOT")
@@ -29,17 +30,21 @@ public class KeycloakExtension extends AbstractKeycloakExtension implements Befo
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
+        System.out.println("============== KeycloakExtension.afterAll ==============");
         injector.afterAll();
         keycloak.stop();
     }
 
     @Override
     public void afterEach(ExtensionContext context) throws Exception {
+        System.out.println("============== KeycloakExtension.afterEach ==============");
         injector.afterEach();
     }
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
+        System.out.println("============== KeycloakExtension.beforeEach ==============");
+        //injector.beforeEach();
         Object testInstance = context.getRequiredTestInstance();
         injector.inject(context, testInstance);
     }

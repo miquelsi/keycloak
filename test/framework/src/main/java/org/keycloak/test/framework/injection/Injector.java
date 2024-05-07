@@ -31,6 +31,18 @@ public class Injector {
         }
     }
 
+    public void beforeAll() {
+        for (InjectionProvider i : injectors) {
+            i.beforeAll();
+        }
+    }
+
+    public void beforeEach() {
+        for (InjectionProvider i : injectors) {
+            i.beforeEach();
+        }
+    }
+
     public void afterEach() {
         for (InjectionProvider i : injectors) {
             i.afterEach();
