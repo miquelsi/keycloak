@@ -247,6 +247,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.7.0</version>
                 <executions>
                     <execution>
                         <id>create-zip</id>
@@ -259,6 +260,7 @@
                                 <descriptor>assembly.xml</descriptor>
                             </descriptors>
                             <appendAssemblyId>false</appendAssemblyId>
+                            <archiveBaseDirectory>${project.basedir}</archiveBaseDirectory>
                         </configuration>
                     </execution>
                 </executions>

@@ -88,6 +88,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.7.0</version>
                 <executions>
                     <execution>
                         <id>assemble</id>
@@ -102,6 +103,7 @@
                             <recompressZippedFiles>true</recompressZippedFiles>
                             <finalName>${project.build.finalName}</finalName>
                             <appendAssemblyId>false</appendAssemblyId>
+                            <archiveBaseDirectory>${project.basedir}</archiveBaseDirectory>
                             <outputDirectory>${project.build.directory}</outputDirectory>
                             <workDirectory>${project.build.directory}/assembly/work</workDirectory>
                         </configuration>
