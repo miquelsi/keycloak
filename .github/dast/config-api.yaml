@@ -1,0 +1,54 @@
+config:
+  # WARNING: `configVersion` indicates the schema version of the config file.
+  # This value tells RapiDAST what schema should be used to read this configuration.
+  # Therefore you should only change it if you update the configuration to a newer schema
+  # It is intended to keep backward compatibility (newer RapiDAST running an older config)
+  configVersion: 4
+
+# `application` contains data related to the application, not to the scans.
+application:
+  shortName: "Keycloak"
+  url: "http://IP_ADDRESS:8080"  # to be replaced by your hostname and port
+
+general:
+
+  authentication:
+    type: http_header
+    parameters:
+      name: Authorization
+      value: "bearer KEYCLOAK_TOKEN"
+
+  container:
+    # This configures what technology is to be used for RapiDAST to run each scanner.
+    # Currently supported: `podman` and `none`
+    #   podman: RapiDAST runs each scanner using podman
+    #   none: RapiDAST runs each scanner in the same host or container (where RapiDAST itself is running in a container)
+    type: "podman"
+
+scanners:
+  zap:
+    #apiScan:
+     # apis:
+      #  apiFile: /home/runner/work/keycloak/keycloak/.github/dast/openapi.json
+        # alternative: apiFile: "<local path to openAPI file>"
+
+    spider:
+      maxDuration: 5
+      url: "http://IP_ADDRESS:8080"
+
+    passiveScan:
+      # optional list of passive rules to disable
+      disabledRules: "2,10015,10027,10096,10024,10098,10023"
+
+
+    # Enable activeScan by uncommenting, once scans with the passiveScan only has run successfully
+    #  # If no policy is chosen, a default ("API-scan-minimal") will be selected
+    #  # The list of policies can be found in scanners/zap/policies/
+    #activeScan:
+    #  policy: API-scan-minimal
+
+    report:
+      format: ["sarif"]
+
+    miscOptions:
+      updateAddons: False

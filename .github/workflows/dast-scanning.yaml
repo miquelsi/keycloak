@@ -1,0 +1,89 @@
+name: DAST
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - dependabot/**
+  pull_request:
+  workflow_dispatch:
+
+env:
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  dast-analysis:
+    name: RapiDAST scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout RapiDAST repository
+        uses: actions/checkout@v4
+        with:
+          repository: RedHatProductSecurity/rapidast
+          ref: refs/heads/main
+          path: rapidast
+
+      - name: Build Keycloak
+        uses: ./.github/actions/build-keycloak
+
+      - name: Check for vulnerabilities in Keycloak
+        run: |
+          echo 'Starting Keycloak server'
+          tar zxf quarkus/dist/target/keycloak-*.tar.gz
+          export KC_BOOTSTRAP_ADMIN_USERNAME=admin
+          export KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+          sh keycloak-*/bin/kc.sh start-dev &
+          
+          sleep 40
+                    
+          echo 'Installing podman...'
+          sudo apt update
+          sudo apt install -y podman
+          
+          cd rapidast
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install pyyaml
+          python -m pip install python-dotenv
+          pip install requests
+          pip install google
+          pip install --upgrade google-api-python-client
+          pip install google.cloud.storage
+          
+          echo "Applying RapiDAST configuration..."                    
+          # Set IP address
+          IP_ADDRESS=$(hostname -I | awk '{ print $1 }')
+          sed -i -e "s/IP_ADDRESS/$IP_ADDRESS/g" ${GITHUB_WORKSPACE}/.github/dast/config-api.yaml
+          
+          # Set access token
+          ACCESS_TOKEN=$(curl -d "client_id=admin-cli" -d "username=admin" -d "password=admin" -d "grant_type=password" "http://${IP_ADDRESS}:8080/realms/master/protocol/openid-connect/token" | jq -r '.access_token')
+          sed -i -e "s/KEYCLOAK_TOKEN/$ACCESS_TOKEN/g" ${GITHUB_WORKSPACE}/.github/dast/config-api.yaml
+          
+          cat ${GITHUB_WORKSPACE}/.github/dast/config-api.yaml
+          
+          echo 'Starting RapiDAST scan...'
+          ./rapidast.py --config ${GITHUB_WORKSPACE}/.github/dast/config-api.yaml
+          echo 'Done!'
+          pwd
+          ls results/Keycloak/DAST-*/zap
+          cp results/Keycloak/DAST-*/zap/zap-report.sarif.json .
+          ls
+
+      - name: Archive scan report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dast-scan-report
+          path: rapidast/results/Keycloak/DAST-*/zap
+
+      - name: Upload RapiDAST scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: rapidast/zap-report.sarif.json
+          category: RapiDAST
