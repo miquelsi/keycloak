@@ -1657,6 +1657,15 @@
                         <artifactId>nxrm3-maven-plugin</artifactId>
                         <version>${nexus3.staging.plugin.version}</version>
                         <extensions>true</extensions>
+                        <executions>
+                            <execution>
+                                <id>default-deploy</id>
+                                <phase>deploy</phase>
+                                <goals>
+                                    <goal>deploy</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                         <configuration>
                             <serverId>${jboss.releases.repo.id}</serverId>
                             <nexusUrl>${jboss.repo.nexusUrl}</nexusUrl>
